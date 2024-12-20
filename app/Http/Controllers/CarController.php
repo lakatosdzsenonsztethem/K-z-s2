@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Car;
-use Dotenv\Validator;
-use Illuminate\Contracts\Validation\Validator as ValidationValidator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class CarController extends Controller
 {
@@ -23,18 +22,18 @@ class CarController extends Controller
      */
     public function store(Request $request)
     {
-        $validator= Validator::make($request->all(),[
+        $validator = Validator::make($request->all(), [
             'brand' => 'required|string',
             'model' => 'required|string',
             'license_plate' => 'required|string',
             'owner_id' => 'required|exists:owners,id',
 
         ]);
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         };
-        
-        $cars =  Car::create($request->all());
+
+        $car =  Car::create($request->all());
         return response()->json($car, 201);
     }
 
@@ -44,7 +43,7 @@ class CarController extends Controller
     public function show($id)
     {
         $car = Car::with('owner')->find($id);
-        if(!$car){
+        if (!$car) {
             return response()->json(['message' => 'Car not found'], 404);
         }
         return response()->json($car);
@@ -53,16 +52,36 @@ class CarController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Car $car)
+    public function update(Request $request, $id)
     {
-        //
+        $car = Car::find($id);
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
+        $validator = Validator::make($request->all(), [
+            'brand' => 'string',
+            'model' => 'string',
+            'license_plate' => 'string',
+            'owner_id' => 'exists:owners,id',
+
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        };
+        $car->update($request->all());
+        return response()->json($car);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Car $car)
+    public function destroy($id)
     {
-        //
+        $car = Car::find($id);
+        if (!$car) {
+            return response()->json(['message' => 'Car not found'], 404);
+        }
+        $car->delete();
+        return response()->json(['message' => 'Car deleted successfully']);
     }
 }
